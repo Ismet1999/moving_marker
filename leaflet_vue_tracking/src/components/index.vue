@@ -16,6 +16,8 @@
     ></l-polyline>
     <l-control>
       <span id=""> {{ Math.ceil(speed * 3.6) }} km/h </span>
+      <span id=""> {{ stateDuration }} </span>
+      <p id="">{{ markerFirst }}</p>
     </l-control>
     <l-control>
       <button @click="startPause">
@@ -26,17 +28,17 @@
 </template>
 
 <script>
-import L from "leaflet";
+import L from 'leaflet'
 import {
   LMap,
   LTileLayer,
   LIconDefault,
   LPolyline,
   LControl,
-} from "vue2-leaflet";
-import LMovingMarker from "../../lib/index.vue";
-import coordinates from "../assets/coordinates.json";
-import { coords } from "../assets/coords";
+} from 'vue2-leaflet'
+import LMovingMarker from '../../lib/index.vue'
+import coordinates from '../assets/coordinates.json'
+import { coords } from '../assets/coords'
 
 // function rand(n) {
 //   const max = n + 0.01;
@@ -55,11 +57,11 @@ import { coords } from "../assets/coords";
 
 const icon = L.icon({
   iconUrl:
-    "https://s3-eu-west-1.amazonaws.com/ct-documents/emails/A-static.png",
+    'https://s3-eu-west-1.amazonaws.com/ct-documents/emails/A-static.png',
   iconSize: [21, 31],
   iconAnchor: [10.5, 31],
   popupAnchor: [4, -25],
-});
+})
 
 export default {
   components: {
@@ -84,10 +86,10 @@ export default {
         attribution:
           '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>',
         url:
-          "https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png",
+          'https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager/{z}/{x}/{y}.png',
       },
       polyline: {
-        color: "green",
+        color: 'green',
         latlngs: coords,
       },
       interval: null,
@@ -95,7 +97,7 @@ export default {
       stateDuration: this.duration,
       speed: 0,
       oldDuration: null,
-    };
+    }
   },
   computed: {
     // get: function() {
@@ -106,32 +108,37 @@ export default {
   },
   watch: {
     stateDuration: {
-      handler(value , oldValue) {
-        if (value ) {
-          clearInterval(this.interval);
-          const setRandomLatLng = () => {
-            if(value !== oldValue){
-            this.stateDuration =
-              this.pDate(coordinates[this.countTurn + 1][0]) -
-              this.pDate(coordinates[this.countTurn][0]);
+      handler(value, oldValue) {
+        if (value !== oldValue) {
+          if (this.playState) {
+            clearInterval(this.interval)
+            const setRandomLatLng = () => {
+              console.log('value !== oldValue', value, oldValue)
+
+              this.stateDuration =
+                this.pDate(coordinates[this.countTurn + 1][0]) -
+                this.pDate(coordinates[this.countTurn][0])
+
+              this.markerFirst = this.pl(coordinates[this.countTurn])
+
+              // console.log(this.$refs.map.mapObject.distance([41, 69], [35, 87]))
+              this.speed =
+                this.$refs.map.mapObject.distance(
+                  this.pl(coordinates[this.countTurn + 1]),
+                  this.pl(coordinates[this.countTurn])
+                ) /
+                (this.stateDuration / 1000)
+
+              this.countTurn++
+              console.log('this.stateDuration ', this.stateDuration)
             }
-            this.markerFirst = this.pl(coordinates[this.countTurn]);
-
-            console.log(this.$refs.map.mapObject.distance([41, 69], [35, 87]));
-            this.speed =
-              this.$refs.map.mapObject.distance(
-                this.pl(coordinates[this.countTurn + 1]),
-                this.pl(coordinates[this.countTurn])
-              ) /
-              (this.stateDuration / 1000);
-
-            this.countTurn++;
-            console.log("this.stateDuration ", this.stateDuration);
-          };
-          this.interval = setInterval(() => {
-            setRandomLatLng();
-          }, value);
-          setRandomLatLng();
+            this.interval = setInterval(() => {
+              if (this.playState) {
+                setRandomLatLng()
+              }
+            }, value)
+            setRandomLatLng()
+          }
         }
       },
       immediate: true,
@@ -139,27 +146,27 @@ export default {
   },
 
   mounted() {
-    this.markerFirst = this.pl(coordinates[0]);
+    this.markerFirst = this.pl(coordinates[0])
   },
   methods: {
     pl(value) {
       return {
         lng: value[1],
         lat: value[2],
-      };
+      }
     },
     pDate(value) {
-      return new Date(value);
+      return new Date(value)
     },
 
     startPause() {
       if (this.playState) {
-        this.playState = false;
-        this.oldDuration = this.stateDuration;
-        this.stateDuration = 0;
+        this.playState = false
+        this.oldDuration = this.stateDuration
+        this.stateDuration = 0
       } else {
-        this.stateDuration = this.oldDuration;
-        this.playState = true;
+        this.stateDuration = this.oldDuration
+        this.playState = true
       }
     },
 
@@ -167,9 +174,9 @@ export default {
 
     // }
   },
-};
+}
 </script>
 
 <style>
-@import "~leaflet/dist/leaflet.css";
+@import '~leaflet/dist/leaflet.css';
 </style>

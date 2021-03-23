@@ -5,25 +5,25 @@
 </template>
 
 <script>
-import Map from "./components/index.vue";
+import Map from './components/index.vue'
 
 export default {
-  name: "App",
+  name: 'App',
   components: {
     Map,
   },
   data() {
     return {
-      duration: 2000,
+      duration: 0,
       keepAtCenter: false,
-    };
+    }
   },
   computed: {
-    durationInteger() {
-      return parseInt(this.duration);
-    },
+    // durationInteger() {
+    //   return parseInt(this.duration)
+    // },
   },
-};
+}
 </script>
 
 <style>
