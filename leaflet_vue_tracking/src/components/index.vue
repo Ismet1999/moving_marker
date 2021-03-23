@@ -1,5 +1,5 @@
 <template>
-  <l-map :zoom="14" :center="initialLocation" ref="map">
+  <l-map :zoom="18" :center="initialLocation" ref="map">
     <l-icon-default />
     <l-tile-layer :url="mapData.url" :attribution="mapData.attribution" />
     <l-moving-marker
@@ -7,6 +7,7 @@
       :duration="stateDuration"
       :keep-at-center="true"
       :icon="icon"
+      ref="marker"
     >
     </l-moving-marker>
     <l-polyline
@@ -18,7 +19,7 @@
       <span id=""> {{ Math.ceil(speed * 3.6) }} km/h </span>
     </l-control>
     <l-control>
-      <button @click="startPause">
+      <button @click="startPauseMove">
         start/pause
       </button>
     </l-control>
@@ -37,21 +38,6 @@ import {
 import LMovingMarker from "../../lib/index.vue";
 import coordinates from "../assets/coordinates.json";
 import { coords } from "../assets/coords";
-
-// function rand(n) {
-//   const max = n + 0.01;
-//   const min = n - 0.01;
-//   return Math.random() * (max - min) + min;
-// }
-
-// const locations = [];
-// for (let i = 0; i < 10; i++) {
-//   locations.push({
-//     id: i,
-//     latlng: L.latLng(48.8929425, 2.3821873),
-//     text: "Moving Marker #" + i,
-//   });
-// }
 
 const icon = L.icon({
   iconUrl:
@@ -94,52 +80,14 @@ export default {
       markerFirst: null,
       stateDuration: this.duration,
       speed: 0,
-      oldDuration: null,
+
+      speedMotion: 1,
+      initInterval: null,
+      initTimeout: null,
     };
   },
-  computed: {
-    // get: function() {
-    //   return this.stateDuration;
-    // },
-    // set : function(newValue){
-    // }
-  },
-  watch: {
-    stateDuration: {
-      handler(value , oldValue) {
-        if (value ) {
-          clearInterval(this.interval);
-          const setRandomLatLng = () => {
-            if(value !== oldValue){
-            this.stateDuration =
-              this.pDate(coordinates[this.countTurn + 1][0]) -
-              this.pDate(coordinates[this.countTurn][0]);
-            }
-            this.markerFirst = this.pl(coordinates[this.countTurn]);
-
-            console.log(this.$refs.map.mapObject.distance([41, 69], [35, 87]));
-            this.speed =
-              this.$refs.map.mapObject.distance(
-                this.pl(coordinates[this.countTurn + 1]),
-                this.pl(coordinates[this.countTurn])
-              ) /
-              (this.stateDuration / 1000);
-
-            this.countTurn++;
-            console.log("this.stateDuration ", this.stateDuration);
-          };
-          this.interval = setInterval(() => {
-            setRandomLatLng();
-          }, value);
-          setRandomLatLng();
-        }
-      },
-      immediate: true,
-    },
-  },
-
   mounted() {
-    this.markerFirst = this.pl(coordinates[0]);
+    this.markerFirst = this.pl(coordinates[0])
   },
   methods: {
     pl(value) {
@@ -152,20 +100,35 @@ export default {
       return new Date(value);
     },
 
-    startPause() {
+    intervalMove() {
+      this.stateDuration =
+        this.pDate(coordinates[this.countTurn + 1][0]) -
+        this.pDate(coordinates[this.countTurn][0]);
+      this.speed =
+        this.$refs.map.mapObject.distance(
+          this.pl(coordinates[this.countTurn + 1]),
+          this.pl(coordinates[this.countTurn])
+        ) /
+        (this.stateDuration / 1000);
+
+      clearInterval(this.initInterval);
+      this.initInterval = setInterval(() => {
+        this.markerFirst = this.pl(coordinates[this.countTurn]);
+        this.countTurn++;
+        this.intervalMove();
+      }, this.stateDuration);
+    },
+
+    startPauseMove() {
       if (this.playState) {
+        this.intervalMove();
         this.playState = false;
-        this.oldDuration = this.stateDuration;
-        this.stateDuration = 0;
       } else {
-        this.stateDuration = this.oldDuration;
+        this.$refs.marker.mapObject.slideCancel();
+        clearInterval(this.initInterval);
         this.playState = true;
       }
     },
-
-    // getSpeed(value){
-
-    // }
   },
 };
 </script>
